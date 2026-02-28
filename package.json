@@ -20,6 +20,7 @@
     "react": "19.2.3",
     "react-apexcharts": "^2.0.1",
     "react-dom": "19.2.3",
+    "recharts": "^3.7.0",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

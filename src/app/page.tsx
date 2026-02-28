@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ShieldCheck, TrendingUp, CreditCard, Facebook, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -284,6 +285,85 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+          {/* Daily Revenue & Win Rate Chart */}
+          {(() => {
+            // Build daily aggregated chart data
+            const dailyMap: Record<string, { revenue: number; orders: number; messages: number }> = {};
+
+            // Sales revenue per day
+            validSales.forEach((s: any) => {
+              const d = s.date_time ? new Date(s.date_time).toISOString().split('T')[0] : null;
+              if (!d) return;
+              if (!dailyMap[d]) dailyMap[d] = { revenue: 0, orders: 0, messages: 0 };
+              dailyMap[d].revenue += Number(s.price) || 0;
+            });
+
+            // Count distinct file orders per day
+            const fileOrdersByDay: Record<string, Set<string>> = {};
+            validSales.forEach((s: any) => {
+              const d = s.date_time ? new Date(s.date_time).toISOString().split('T')[0] : null;
+              if (!d) return;
+              if (!fileOrdersByDay[d]) fileOrdersByDay[d] = new Set();
+              fileOrdersByDay[d].add(`${s.date_time}_${s.client || s.record_id}`);
+            });
+
+            // Proship revenue + orders per day
+            validProship.forEach((p: any) => {
+              const d = p.created_at ? new Date(p.created_at).toISOString().split('T')[0] : null;
+              if (!d) return;
+              if (!dailyMap[d]) dailyMap[d] = { revenue: 0, orders: 0, messages: 0 };
+              dailyMap[d].revenue += Number(p.actual_sales) || 0;
+              dailyMap[d].orders += 1;
+            });
+
+            // FB messages per day
+            fbData.forEach((ad: any) => {
+              const d = ad.report_date || null;
+              if (!d) return;
+              if (!dailyMap[d]) dailyMap[d] = { revenue: 0, orders: 0, messages: 0 };
+              dailyMap[d].messages += Number(ad.conversations_started) || 0;
+            });
+
+            // Merge file orders into dailyMap
+            Object.keys(fileOrdersByDay).forEach(d => {
+              if (!dailyMap[d]) dailyMap[d] = { revenue: 0, orders: 0, messages: 0 };
+              dailyMap[d].orders += fileOrdersByDay[d].size;
+            });
+
+            const chartData = Object.entries(dailyMap)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([date, v]) => ({
+                date: date.slice(5),  // MM-DD
+                revenue: v.revenue,
+                winRate: v.messages > 0 ? parseFloat(((v.orders / v.messages) * 100).toFixed(1)) : 0,
+              }));
+
+            return (
+              <div className="p-6 bg-white rounded-[32px] border-2 border-gray-50 shadow-xl shadow-gray-50/50 mb-8">
+                <p className="text-brand-500 font-bold uppercase text-[10px] tracking-widest mb-4">Daily Revenue & Win Rate</p>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#6b7280' }} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#3674B5' }} tickFormatter={(v: number) => `฿${(v / 1000).toFixed(0)}k`} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#f59e0b' }} tickFormatter={(v: number) => `${v}%`} domain={[0, 100]} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 12 }}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      formatter={(value: any, name: any) => {
+                        if (name === 'Revenue') return [`฿${Number(value).toLocaleString()}`, name];
+                        return [`${value}%`, name];
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Line yAxisId="left" type="monotone" dataKey="revenue" name="Revenue" stroke="#3674B5" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="winRate" name="Win Rate %" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            );
+          })()}
+
           {/* Facebook Ads Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
             <div className="p-6 bg-gradient-to-br from-brand-800 to-brand-600 rounded-[32px] text-white shadow-xl shadow-indigo-100 flex flex-col justify-between">
@@ -330,7 +410,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-brand-300"></span>
                   <span>Proship: <span className="text-white text-base">฿{proshipRevenue.toLocaleString()} </span>
-                    <span className="text-xs text-brand-700 ml-1">(COD: ฿{proshipCOD.toLocaleString()})</span>
+                    <span className="text-xs text-white ml-1">(COD: ฿{proshipCOD.toLocaleString()})</span>
                   </span>
                 </div>
               </div>
