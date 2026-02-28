@@ -264,7 +264,7 @@ export default function SalesHub() {
                             <span className="flex items-center gap-1 px-2 py-1 bg-brand-50 rounded-lg">
                                 <span className="w-1.5 h-1.5 rounded-full bg-brand-400"></span>
                                 Proship: <span className="text-brand-800 text-xs">฿{proshipRevenue.toLocaleString()} </span>
-                                <span className="text-[10px] text-brand-200 ml-1">(COD: ฿{proshipCOD.toLocaleString()})</span>
+                                <span className="text-[10px] text-brand-700 ml-1">(COD: ฿{proshipCOD.toLocaleString()})</span>
                             </span>
                         </div>
                     </div>
@@ -290,7 +290,7 @@ export default function SalesHub() {
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-5 bg-brand-500 transition-opacity"></div>
                         <p className="text-[9px] uppercase font-black text-brand-500 tracking-widest z-10">Reviews</p>
                         <p className="text-3xl font-black text-brand-600 z-10 mt-1">{userReviewsCount}</p>
-                        <div className="mt-1 text-[8px] uppercase font-bold text-brand-500 z-10">Verified</div>
+                        <div className="mt-1 text-[10px] uppercase font-bold text-brand-500 z-10">Verified</div>
                     </div>
                 </div>
 
@@ -443,7 +443,7 @@ export default function SalesHub() {
                                     <th className="px-10 py-6">Customer</th>
                                     <th className="px-10 py-6">Details</th>
                                     <th className="px-10 py-6 text-right">Sale Total</th>
-                                    <th className="px-10 py-6 text-right">COD / Act.</th>
+                                    <th className="px-10 py-6 text-right">COD</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50 text-brand-700 text-sm">
@@ -470,9 +470,8 @@ export default function SalesHub() {
                                             ฿{(Number(row.actual_sales) || 0).toLocaleString()}
                                         </td>
                                         <td className="px-10 py-4 text-right text-xs">
-                                            <p>COD: ฿{Number(row.cod_amount) || 0}</p>
-                                            {Number(row.cod_amount) !== 0 && (
-                                                <p className="text-gray-400 mt-0.5">Act: ฿{Number(row.actual_sales) || 0}</p>
+                                            {Number(row.cod_amount) > 0 && (
+                                                <p>COD: ฿{Number(row.cod_amount).toLocaleString()}</p>
                                             )}
                                         </td>
                                     </tr>

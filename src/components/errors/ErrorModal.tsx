@@ -248,7 +248,7 @@ export default function ErrorModal({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                             {['1', '3', '4'].includes(scenario) && (
                                 <div className="space-y-1">
-                                    <label className="text-[8px] uppercase font-black text-red-400">ราคาของที่ส่งผิด / ราคาหลังหักส่วนลด*ถ้ามี (฿)</label>
+                                    <label className="text-[10px] uppercase font-black text-red-400">ราคาของที่ส่งผิด / ราคาหลังหักส่วนลด*ถ้ามี (฿)</label>
                                     <input
                                         type="number"
                                         required
@@ -261,7 +261,7 @@ export default function ErrorModal({
                             )}
                             {['2', '5'].includes(scenario) && (
                                 <div className="space-y-1">
-                                    <label className="text-[8px] uppercase font-black text-red-400">ค่าส่งกลับจากลูกค้า / Return Fee (฿)</label>
+                                    <label className="text-[10px] uppercase font-black text-red-400">ค่าส่งกลับจากลูกค้า / Return Fee (฿)</label>
                                     <input
                                         type="number"
                                         required
@@ -274,7 +274,7 @@ export default function ErrorModal({
                             )}
                             {['1', '2', '3'].includes(scenario) && (
                                 <div className="space-y-1">
-                                    <label className="text-[8px] uppercase font-black text-red-400">ค่าส่งของให้ลูกค้า / Del Fee (฿)</label>
+                                    <label className="text-[10px] uppercase font-black text-red-400">ค่าส่งของให้ลูกค้า / Del Fee (฿)</label>
                                     <input
                                         type="number"
                                         required

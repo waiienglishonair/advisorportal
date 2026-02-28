@@ -330,7 +330,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-brand-300"></span>
                   <span>Proship: <span className="text-white text-base">฿{proshipRevenue.toLocaleString()} </span>
-                    <span className="text-xs text-brand-200 ml-1">(COD: ฿{proshipCOD.toLocaleString()})</span>
+                    <span className="text-xs text-brand-700 ml-1">(COD: ฿{proshipCOD.toLocaleString()})</span>
                   </span>
                 </div>
               </div>

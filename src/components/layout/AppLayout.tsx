@@ -49,7 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 user={user}
             />
 
-            <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-brand-50 via-brand-100 to-brand-200">
+            <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-[#d1f8ef] to-[#cee2f6]">
                 {/* Mobile Header */}
                 <header className="md:hidden bg-brand-900 text-white p-4 flex justify-between items-center shadow-md z-30 shrink-0">
                     <div className="flex items-center gap-3">
