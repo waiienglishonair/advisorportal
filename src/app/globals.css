@@ -1,26 +1,87 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  
+  /* Brand Colors */
+  --color-brand-900: #1e4066;
+  --color-brand-800: #3674B5;
+  --color-brand-700: #3674B5;
+  --color-brand-600: #578FCA;
+  --color-brand-500: #578FCA;
+  --color-brand-400: #cee2f6;
+  --color-brand-300: #A1E3F9;
+  --color-brand-200: #D1F8EF;
+  --color-brand-100: #D1F8EF;
+  --color-brand-50: #F0FCF9;
+
+  /* Overriding Default Blue */
+  --color-blue-900: #1e4066;
+  --color-blue-800: #3674B5;
+  --color-blue-700: #3674B5;
+  --color-blue-600: #3674B5;
+  --color-blue-500: #578FCA;
+  --color-blue-400: #578FCA;
+  --color-blue-300: #A1E3F9;
+  --color-blue-200: #A1E3F9;
+  --color-blue-100: #D1F8EF;
+  --color-blue-50: #F0FCF9;
+
+  /* Overriding Indigo */
+  --color-indigo-900: #1e4066;
+  --color-indigo-800: #3674B5;
+  --color-indigo-700: #3674B5;
+  --color-indigo-600: #3674B5;
+  --color-indigo-500: #578FCA;
+  --color-indigo-400: #578FCA;
+  --color-indigo-300: #A1E3F9;
+  --color-indigo-200: #D1F8EF;
+  --color-indigo-100: #D1F8EF;
+  --color-indigo-50: #F0FCF9;
+
+  /* Overriding Cyan */
+  --color-cyan-600: #578FCA;
+  --color-cyan-500: #A1E3F9;
+  --color-cyan-400: #A1E3F9;
+  --color-cyan-100: #D1F8EF;
+
+  --animate-fade-in: fadeIn 0.2s ease-out;
+  --animate-spinner: spinner 1.5s linear infinite;
+  --animate-progress-pulse: progress-pulse 2s ease-in-out infinite;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes spinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes progress-pulse {
+  0% { width: 5%; }
+  50% { width: 70%; }
+  100% { width: 95%; }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  @apply bg-brand-400 text-brand-900 font-medium text-sm antialiased;
+}
+
+/* Scrollbar styling from original UI */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
 }
