@@ -452,11 +452,11 @@ export default function SalesHub() {
                                 {filteredProship.map((row) => (
                                     <tr key={row.id} className="hover:bg-brand-50 transition-colors">
                                         <td className="px-10 py-4 font-black">
-                                            {row.createdat ? new Date(row.createdat).toLocaleDateString() : 'N/A'}
+                                            {row.created_at ? new Date(row.created_at).toLocaleDateString() : 'N/A'}
                                         </td>
                                         <td className="px-10 py-4">
                                             <span className="text-[10px] px-2 py-1 bg-brand-100 text-brand-700 rounded-lg uppercase tracking-widest">{row.status}</span>
-                                            <p className="text-xs text-brand-500 font-mono mt-1">{row.tracking}</p>
+                                            <p className="text-xs text-brand-500 font-mono mt-1">{row.tracking_no}</p>
                                         </td>
                                         <td className="px-10 py-4">
                                             <p>{row.receiver_name}</p>
@@ -467,11 +467,13 @@ export default function SalesHub() {
                                             <p className="text-[10px] text-brand-400">{row.sku}</p>
                                         </td>
                                         <td className="px-10 py-4 text-right font-black text-blue-600">
-                                            ฿{(Number(row.sale_amount) || 0).toLocaleString()}
+                                            ฿{(Number(row.actual_sales) || 0).toLocaleString()}
                                         </td>
                                         <td className="px-10 py-4 text-right text-xs">
                                             <p>COD: ฿{Number(row.cod_amount) || 0}</p>
-                                            <p className="text-gray-400 mt-0.5">Act: ฿{Number(row.actualsales) || 0}</p>
+                                            {Number(row.cod_amount) !== 0 && (
+                                                <p className="text-gray-400 mt-0.5">Act: ฿{Number(row.actual_sales) || 0}</p>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
