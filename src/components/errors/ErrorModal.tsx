@@ -121,6 +121,7 @@ export default function ErrorModal({
             case '3': return (oVal - rVal) - eFee;
             case '4': return oVal - rVal;
             case '5': return (oVal + retFee) * -1;
+            case '6': return oVal - eFee;
             default: return 0;
         }
     };
@@ -135,6 +136,7 @@ export default function ErrorModal({
         '3': '3. ให้เก็บของไว้ แล้วส่งของใหม่ไป',
         '4': '4. ปฏิเสธข้อเสนอ ไม่ส่งของคืน',
         '5': '5. คืนของ + คืนเงิน',
+        '6': '6. ส่งของไม่ครบ',
     };
 
     const handleSubmit = (e: any) => {
@@ -283,6 +285,7 @@ export default function ErrorModal({
                             <option value="3">3. ให้เก็บของไว้ แล้วส่งของใหม่ไป</option>
                             <option value="4">4. ปฏิเสธข้อเสนอ ไม่ส่งของคืน</option>
                             <option value="5">5. คืนของ + คืนเงิน</option>
+                            <option value="6">6. ส่งของไม่ครบ</option>
                         </select>
 
                         {/* Dynamic fields based on Scenario */}
@@ -313,7 +316,7 @@ export default function ErrorModal({
                                     />
                                 </div>
                             )}
-                            {['1', '2', '3'].includes(scenario) && (
+                            {['1', '2', '3', '6'].includes(scenario) && (
                                 <div className="space-y-1">
                                     <label className="text-[10px] uppercase font-black text-red-400">ค่าส่งของให้ลูกค้า / Del Fee (฿)</label>
                                     <input
