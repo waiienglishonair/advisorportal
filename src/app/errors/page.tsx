@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { AlertTriangle, Search } from 'lucide-react';
+import { AlertTriangle, Search, Pencil, Trash2 } from 'lucide-react';
 import ErrorModal from '@/components/errors/ErrorModal';
 
 export default function ErrorHub() {
@@ -13,6 +13,7 @@ export default function ErrorHub() {
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState({ start: '', end: '' });
     const [proshipProducts, setProshipProducts] = useState<any[]>([]);
+    const [editingRecord, setEditingRecord] = useState<any>(null);
 
     useEffect(() => {
         const stored = localStorage.getItem('portal_user');
@@ -62,18 +63,28 @@ export default function ErrorHub() {
 
     const handleSaveError = async (payload: any) => {
         try {
-            const timestamp = new Date().toISOString();
-
-            const dbPayload = {
-                ...payload,
-                date_time_record: timestamp,
-                record_staff: user?.name || 'Unknown'
-            };
-
-            const { error } = await supabase.from('error_order').insert([dbPayload]);
-            if (error) throw error;
+            if (payload.record_id) {
+                // Update existing record
+                const { record_id, ...updateData } = payload;
+                const { error } = await supabase
+                    .from('error_order')
+                    .update(updateData)
+                    .eq('record_id', record_id);
+                if (error) throw error;
+            } else {
+                // Insert new record
+                const timestamp = new Date().toISOString();
+                const dbPayload = {
+                    ...payload,
+                    date_time_record: timestamp,
+                    record_staff: user?.name || 'Unknown'
+                };
+                const { error } = await supabase.from('error_order').insert([dbPayload]);
+                if (error) throw error;
+            }
 
             setIsModalOpen(false);
+            setEditingRecord(null);
             fetchData();
         } catch (err: any) {
             console.error('Save failed', err?.message || err);
@@ -81,15 +92,69 @@ export default function ErrorHub() {
         }
     };
 
+    const handleEditError = async (recordId: string) => {
+        try {
+            // Fetch fresh record from DB
+            const { data, error } = await supabase
+                .from('error_order')
+                .select('*')
+                .eq('record_id', recordId)
+                .single();
+
+            if (error) throw error;
+            if (!data) {
+                alert('Record not found');
+                return;
+            }
+
+            setEditingRecord(data);
+            setIsModalOpen(true);
+        } catch (err: any) {
+            console.error('Failed to fetch record for edit:', err?.message || err);
+            alert('Failed to load record: ' + (err?.message || 'Unknown error'));
+        }
+    };
+
+    const handleDeleteError = async (recordId: string) => {
+        if (!confirm('Delete this Error Record?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('error_order')
+                .delete()
+                .eq('record_id', recordId);
+
+            if (error) throw error;
+            fetchData();
+        } catch (err: any) {
+            console.error('Delete failed', err?.message || err);
+            alert('Failed to delete error record: ' + (err?.message || 'Unknown error'));
+        }
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingRecord(null);
+    };
+
+    const handleOpenNewModal = () => {
+        setEditingRecord(null);
+        setIsModalOpen(true);
+    };
+
     const filteredErrors = errorsData.filter(err =>
         (err.customer?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (err.order_sku?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (err.recieve_sku?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (err.platform?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
     // Summing amend revenue for this period
     const totalAmendRev = filteredErrors.reduce((acc, curr) => acc + (Number(curr.amend_rev) || 0), 0);
     const totalErrors = filteredErrors.length;
+
+    // Check if current user can edit a record
+    const canEdit = (err: any) => user?.name && err.record_staff && user.name === err.record_staff;
 
     return (
         <div className="max-w-6xl mx-auto space-y-10 font-bold fade-in pb-20 md:pb-0">
@@ -98,7 +163,7 @@ export default function ErrorHub() {
                     Error Log
                 </h2>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={handleOpenNewModal}
                     className="bg-red-600 text-white px-10 py-5 rounded-[24px] font-black hover:bg-red-700 shadow-xl shadow-red-200 uppercase tracking-widest text-xs flex items-center gap-2"
                 >
                     <AlertTriangle className="w-5 h-5" /> Record Error
@@ -150,39 +215,59 @@ export default function ErrorHub() {
                             <tr>
                                 <th className="px-8 py-6">Date</th>
                                 <th className="px-8 py-6">Customer</th>
-                                <th className="px-8 py-6">Error Items</th>
-                                <th className="px-8 py-6 text-right">Order Value</th>
+                                <th className="px-8 py-6">Order SKU</th>
+                                <th className="px-8 py-6">Recieve SKU</th>
                                 <th className="px-8 py-6">Scenario</th>
-                                <th className="px-8 py-6 text-right">Amend Rev</th>
+                                <th className="px-8 py-6 text-right">AmendRev</th>
+                                <th className="px-8 py-6 text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-red-50 text-brand-700 text-sm">
-                            {loading && <tr><td colSpan={6} className="text-center py-10">Loading...</td></tr>}
-                            {!loading && filteredErrors.length === 0 && <tr><td colSpan={6} className="text-center py-10 text-gray-400">No error records found for this period.</td></tr>}
+                            {loading && <tr><td colSpan={7} className="text-center py-10">Loading...</td></tr>}
+                            {!loading && filteredErrors.length === 0 && <tr><td colSpan={7} className="text-center py-10 text-gray-400">No error records found for this period.</td></tr>}
                             {filteredErrors.map((err) => (
-                                <tr key={err.record_id} className="hover:bg-red-50/30 transition-colors">
+                                <tr key={err.record_id} className="hover:bg-red-50/30 transition-colors group">
                                     <td className="px-8 py-4">
-                                        <p className="font-black text-brand-900">{err.date_time_record ? new Date(err.date_time_record).toLocaleDateString() : 'N/A'}</p>
-                                        <p className="text-[10px] text-red-400 uppercase tracking-widest">{err.record_staff}</p>
+                                        <p className="font-black text-brand-900">{err.date_time_record ? new Date(err.date_time_record).toLocaleDateString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit' }) : 'N/A'}</p>
+                                        <p className="text-[10px] text-red-400 uppercase tracking-widest">{err.date_time_record ? new Date(err.date_time_record).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) : ''}</p>
                                     </td>
                                     <td className="px-8 py-4">
                                         <p className="font-bold">{err.customer}</p>
                                         <p className="text-[10px] text-blue-500 uppercase font-black">{err.platform}</p>
                                     </td>
                                     <td className="px-8 py-4">
-                                        <p className="text-xs text-brand-600 truncate max-w-[150px]"><span className="text-[10px] text-gray-400 uppercase mr-1">R:</span> {err.recieve_sku}</p>
-                                        <p className="text-xs text-brand-400 mt-1 truncate max-w-[150px]"><span className="text-[10px] text-gray-400 uppercase mr-1">O:</span> {err.order_sku}</p>
-                                    </td>
-                                    <td className="px-8 py-4 text-right font-black text-gray-600">
-                                        ฿{Number(err.order_value || 0).toLocaleString()}
+                                        <p className="text-xs text-brand-800 font-black max-w-[180px]">{err.order_sku || '-'}</p>
                                     </td>
                                     <td className="px-8 py-4">
-                                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] uppercase font-black truncate max-w-[120px] inline-block">
+                                        <p className="text-xs text-brand-800 font-black max-w-[180px]">{err.recieve_sku || '-'}</p>
+                                    </td>
+                                    <td className="px-8 py-4">
+                                        <span className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-[10px] uppercase font-black tracking-widest truncate max-w-[150px] inline-block" title={err.scenario}>
                                             {err.scenario}
                                         </span>
                                     </td>
                                     <td className="px-8 py-4 text-right font-black text-red-600">
                                         ฿{Number(err.amend_rev || 0).toLocaleString()}
+                                    </td>
+                                    <td className="px-8 py-4 text-right">
+                                        {canEdit(err) && (
+                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => handleEditError(err.record_id)}
+                                                    className="p-2 text-brand-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteError(err.record_id)}
+                                                    className="p-2 text-brand-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -193,10 +278,11 @@ export default function ErrorHub() {
 
             <ErrorModal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={handleCloseModal}
                 onSave={handleSaveError}
                 user={user}
                 proshipProducts={proshipProducts}
+                editData={editingRecord}
             />
 
         </div>

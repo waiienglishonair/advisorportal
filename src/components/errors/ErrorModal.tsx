@@ -6,7 +6,8 @@ export default function ErrorModal({
     onClose,
     onSave,
     proshipProducts = [],
-    user
+    user,
+    editData = null
 }: any) {
     const [customer, setCustomer] = useState('');
     const [platform, setPlatform] = useState('Facebook');
@@ -22,21 +23,48 @@ export default function ErrorModal({
     const [returnFee, setReturnFee] = useState<number>(0);
     const [expFee, setExpFee] = useState<number>(0);
 
+    const isEditMode = !!editData;
+
     useEffect(() => {
         if (isOpen) {
-            setCustomer('');
-            setPlatform('Facebook');
-            setOrderTags([]);
-            setOrderInput('');
-            setRecieveTags([]);
-            setRecieveInput('');
-            setOrderValue(0);
-            setScenario('1');
-            setRecieveValue(0);
-            setReturnFee(0);
-            setExpFee(0);
+            if (editData) {
+                // Edit mode: pre-fill from fetched record
+                setCustomer(editData.customer || '');
+                setPlatform(editData.platform || 'Facebook');
+                setOrderValue(Number(editData.order_value) || 0);
+                setRecieveValue(Number(editData.recieve_value) || 0);
+                setReturnFee(Number(editData.return_fee) || 0);
+                setExpFee(Number(editData.exp_fee) || 0);
+
+                // Parse comma-separated SKU into tag arrays
+                const oTags = (editData.order_sku || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+                const rTags = (editData.recieve_sku || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+                setOrderTags(oTags);
+                setRecieveTags(rTags);
+                setOrderInput('');
+                setRecieveInput('');
+
+                // Parse scenario: "Scenario 3" → "3", or "3. ให้เก็บของไว้..." → "3"
+                let scVal = editData.scenario || '1';
+                const match = scVal.toString().match(/(\d+)/);
+                if (match) scVal = match[1];
+                setScenario(scVal);
+            } else {
+                // New mode: reset all fields
+                setCustomer('');
+                setPlatform('Facebook');
+                setOrderTags([]);
+                setOrderInput('');
+                setRecieveTags([]);
+                setRecieveInput('');
+                setOrderValue(0);
+                setScenario('1');
+                setRecieveValue(0);
+                setReturnFee(0);
+                setExpFee(0);
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, editData]);
 
     const handleAddTag = (type: 'order' | 'recieve', val: string) => {
         const trimmed = val.trim();
@@ -101,10 +129,18 @@ export default function ErrorModal({
 
     if (!isOpen) return null;
 
+    const scenarioOptions: Record<string, string> = {
+        '1': '1. Up-sell ลดราคา 20%',
+        '2': '2. ส่งของคืน ส่งของใหม่ไป',
+        '3': '3. ให้เก็บของไว้ แล้วส่งของใหม่ไป',
+        '4': '4. ปฏิเสธข้อเสนอ ไม่ส่งของคืน',
+        '5': '5. คืนของ + คืนเงิน',
+    };
+
     const handleSubmit = (e: any) => {
         e.preventDefault();
 
-        const payload = {
+        const payload: any = {
             customer,
             platform,
             order_sku: orderTags.join(', '),
@@ -113,9 +149,14 @@ export default function ErrorModal({
             recieve_value: recieveValue,
             return_fee: returnFee,
             exp_fee: expFee,
-            scenario: `Scenario ${scenario}`, // Add prefix for clarity
+            scenario: scenarioOptions[scenario] || `Scenario ${scenario}`,
             amend_rev: amendRev
         };
+
+        // Include record_id for edit mode
+        if (isEditMode && editData?.record_id) {
+            payload.record_id = editData.record_id;
+        }
 
         onSave(payload);
     };
@@ -126,7 +167,7 @@ export default function ErrorModal({
 
                 <div className="px-8 md:px-12 py-8 md:py-10 border-b flex justify-between items-center bg-red-50/50 font-black">
                     <h3 className="text-xl md:text-2xl font-black uppercase text-red-800 flex items-center gap-2">
-                        <AlertCircle className="w-6 h-6" /> Error Order
+                        <AlertCircle className="w-6 h-6" /> {isEditMode ? 'Edit Error Record' : 'Error Order'}
                     </h3>
                     <button onClick={onClose} className="text-red-500 hover:text-red-800 transition-colors">
                         <X className="w-8 h-8" />
@@ -302,7 +343,7 @@ export default function ErrorModal({
                         type="submit"
                         className="w-full bg-red-600 hover:bg-red-700 text-white py-5 rounded-3xl font-black uppercase text-xs shadow-xl shadow-red-200 active:scale-[0.98] transition-all mt-4"
                     >
-                        Save Error Record
+                        {isEditMode ? 'Update Error Record' : 'Save Error Record'}
                     </button>
 
                 </form>
