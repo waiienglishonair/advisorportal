@@ -62,20 +62,21 @@ export default function ReviewModal({
 
             const uploadResult = await uploadRes.json();
 
-            let uploadedUrls: string[] = [];
-            if (uploadResult.success && uploadResult.urls) {
-                uploadedUrls = uploadResult.urls;
+            let finalStorageUrl = '';
+            if (uploadResult.success && uploadResult.folderUrl) {
+                finalStorageUrl = uploadResult.folderUrl;
+            } else if (uploadResult.urls && uploadResult.urls.length > 0) {
+                finalStorageUrl = uploadResult.urls[0];
             } else {
                 console.warn('Upload to Google Drive returned:', uploadResult);
-                // Fallback: use placeholder URLs so the review record still saves
-                uploadedUrls = files.map(f => `upload-pending://${f.name}`);
+                finalStorageUrl = `upload-pending://${files[0]?.name || 'unknown'}`;
             }
 
             const payload = {
                 client_name: clientName,
                 source_from: sourceChannel,
-                product: JSON.stringify(productNames),
-                storage: JSON.stringify(uploadedUrls),
+                product: productNames.join(', '),
+                storage: finalStorageUrl,
             };
 
             await onSave(payload);

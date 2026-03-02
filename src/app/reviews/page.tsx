@@ -79,6 +79,18 @@ export default function ReviewHub() {
         }
     };
 
+    const formatProductDisplay = (productVal: string) => {
+        if (!productVal) return '';
+        try {
+            // Check if it's a legacy JSON array string like '["Product A"]'
+            const parsed = JSON.parse(productVal);
+            if (Array.isArray(parsed)) return parsed.join(', ');
+            return productVal;
+        } catch {
+            return productVal; // already a plain string
+        }
+    };
+
     return (
         <div className="max-w-6xl mx-auto space-y-10 font-bold fade-in pb-20 md:pb-0">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center text-brand-900 font-black gap-4">
@@ -131,8 +143,8 @@ export default function ReviewHub() {
                                         <td className="px-10 py-4">
                                             <span className="px-3 py-1 bg-brand-100 text-brand-700 rounded-lg text-xs uppercase tracking-widest">{rev.source_from}</span>
                                         </td>
-                                        <td className="px-10 py-4 text-xs italic text-brand-500 max-w-[200px] truncate">
-                                            {rev.product}
+                                        <td className="px-10 py-4 text-xs italic text-brand-500 max-w-[200px] truncate" title={formatProductDisplay(rev.product)}>
+                                            {formatProductDisplay(rev.product)}
                                         </td>
                                         <td className="px-10 py-4 text-right">
                                             {files.length > 0 ? (
@@ -147,7 +159,7 @@ export default function ReviewHub() {
                                                                 rel="noreferrer"
                                                                 className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 font-bold"
                                                             >
-                                                                <ExternalLink className="w-3 h-3" /> View {files.length > 1 ? `#${idx + 1}` : ''}
+                                                                <ExternalLink className="w-3 h-3" /> {files.length > 1 ? `Folder #${idx + 1}` : 'View Folder'}
                                                             </a>
                                                         ) : (
                                                             <span key={idx} className="text-[10px] text-gray-400" title={url}>Fallback Upload</span>
