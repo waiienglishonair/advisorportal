@@ -42,3 +42,6 @@ next-env.d.ts
 
 # sql
 *.sql
+
+# google service account credentials
+service-account.json

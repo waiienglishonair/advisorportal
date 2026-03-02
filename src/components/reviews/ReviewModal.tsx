@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { X, Search, ChevronDown, Check, UploadCloud } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
 export default function ReviewModal({
     isOpen,
@@ -26,6 +25,8 @@ export default function ReviewModal({
             setSelectedProducts([]);
             setFiles([]);
             setUploading(false);
+            setProductSearch('');
+            setIsProductDropdownOpen(false);
         }
     }, [isOpen]);
 
@@ -37,41 +38,44 @@ export default function ReviewModal({
             alert("Please select at least one product.");
             return;
         }
+        if (files.length === 0) {
+            alert("Please select at least one file.");
+            return;
+        }
 
         setUploading(true);
 
         try {
-            // Ideally upload to Supabase Storage bucket 'reviews'
-            // Since we don't know if the bucket is public or created, we do a best-effort upload.
-            const uploadedUrls = [];
-
+            // Upload files to Google Drive via our API route
+            const formData = new FormData();
             for (const file of files) {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-                const filePath = `${user?.name || 'unknown'}/${fileName}`;
-
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('reviews')
-                    .upload(filePath, file);
-
-                if (uploadError) {
-                    console.error("Storage upload failed (bucket might not exist or ACL error):", uploadError);
-                    // Fallback string if bucket fails
-                    uploadedUrls.push(`fallback-url-for-${file.name}`);
-                } else {
-                    const { data: urlData } = supabase.storage.from('reviews').getPublicUrl(filePath);
-                    uploadedUrls.push(urlData.publicUrl);
-                }
+                formData.append('files', file);
             }
-
+            formData.append('clientName', clientName);
             const productNames = selectedProducts.map(p => p.product);
+            formData.append('products', JSON.stringify(productNames));
+
+            const uploadRes = await fetch('/api/upload-review', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const uploadResult = await uploadRes.json();
+
+            let uploadedUrls: string[] = [];
+            if (uploadResult.success && uploadResult.urls) {
+                uploadedUrls = uploadResult.urls;
+            } else {
+                console.warn('Upload to Google Drive returned:', uploadResult);
+                // Fallback: use placeholder URLs so the review record still saves
+                uploadedUrls = files.map(f => `upload-pending://${f.name}`);
+            }
 
             const payload = {
                 client_name: clientName,
                 source_from: sourceChannel,
                 product: JSON.stringify(productNames),
                 storage: JSON.stringify(uploadedUrls),
-                // date_time, user_name, record_id injected by parent
             };
 
             await onSave(payload);
@@ -163,11 +167,11 @@ export default function ReviewModal({
                                     />
                                 </div>
                                 <div className="overflow-y-auto p-2 space-y-1">
-                                    {filteredProducts.map((prod: any) => {
+                                    {filteredProducts.map((prod: any, idx: number) => {
                                         const isSelected = selectedProducts.find(p => p.product === prod.product);
                                         return (
                                             <div
-                                                key={prod.product || Math.random()}
+                                                key={`${prod.product}-${idx}`}
                                                 onClick={() => toggleProduct(prod)}
                                                 className={`p-3 rounded-xl flex justify-between items-center cursor-pointer transition-colors ${isSelected ? 'bg-blue-50 text-blue-700' : 'hover:bg-brand-50'}`}
                                             >
