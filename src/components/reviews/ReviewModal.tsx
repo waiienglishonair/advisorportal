@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Search, ChevronDown, Check, UploadCloud } from 'lucide-react';
 
 export default function ReviewModal({
@@ -17,6 +17,21 @@ export default function ReviewModal({
     // Dropdown state
     const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
     const [productSearch, setProductSearch] = useState('');
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsProductDropdownOpen(false);
+            }
+        }
+        if (isProductDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isProductDropdownOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -140,7 +155,7 @@ export default function ReviewModal({
                         </select>
                     </div>
 
-                    <div className="relative space-y-1">
+                    <div className="relative space-y-1" ref={dropdownRef}>
                         <label className="text-[10px] uppercase font-black text-brand-500">Related Products</label>
                         <button
                             type="button"
