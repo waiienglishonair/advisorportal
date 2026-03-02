@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
 
         const drive = getDriveClient();
         const uploadedUrls: string[] = [];
+        let primaryFolderUrl = '';
 
         // Prepare hierarchy structures (Year and Month)
         const now = new Date();
@@ -93,6 +94,10 @@ export async function POST(request: NextRequest) {
                 const yearFolderId = await getOrCreateFolder(drive, prodFolderId, yearStr);
                 const monthFolderId = await getOrCreateFolder(drive, yearFolderId, monthStr);
                 const clientFolderId = await getOrCreateFolder(drive, monthFolderId, clientName);
+
+                if (!primaryFolderUrl) {
+                    primaryFolderUrl = `https://drive.google.com/drive/folders/${clientFolderId}`;
+                }
 
                 try {
                     const stream = Readable.from(buffer);
@@ -136,7 +141,7 @@ export async function POST(request: NextRequest) {
             } // end products loop
         } // end files loop
 
-        return NextResponse.json({ success: true, urls: uploadedUrls });
+        return NextResponse.json({ success: true, folderUrl: primaryFolderUrl, urls: uploadedUrls });
     } catch (error: any) {
         console.error('Upload error:', error?.message);
         return NextResponse.json(
